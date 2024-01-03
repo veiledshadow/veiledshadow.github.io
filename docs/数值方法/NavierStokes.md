@@ -88,3 +88,14 @@ $$
 \end{aligned}
 \end{equation}
 $$
+
+这里由于压方程是退化的,需要追加拉格朗日乘子来强制施加约束, 考虑弱形式
+
+$$
+\begin{equation}
+\begin{aligned}
+    & (\nabla p^{n+1}, \nabla q) + \alpha^{n+1} (1, q) = （\nabla p^n, \nabla q) + \frac{1}{\tau} (\widetilde{\mathbf{u}}, \nabla q) \\ 
+    & (p^{n+1}, 1) \beta = (p^0, 1)\beta
+\end{aligned}
+\end{equation}
+$$
