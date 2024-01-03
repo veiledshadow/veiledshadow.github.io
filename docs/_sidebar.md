@@ -9,6 +9,9 @@
         * [C++科学计算](/编程/C++/C++科学计算/)
            * [Ch1介绍及基本数据类型](/编程/C++/C++科学计算/Ch1介绍及基本数据类型)
 
+* 数值方法
+    * [NavierStokes](/数值方法/NavierStokes)
+
 * 效率工具
     * [docsify](/效率工具/docsify)
     * [others]()
