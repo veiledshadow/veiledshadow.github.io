@@ -52,25 +52,33 @@ $$
 
 ### 压力校正格式
 
+##### 一阶压力校正格式
+
 $$
 \begin{equation}
+\left\lbrace
 \begin{aligned}
     & \frac{\widetilde{\mathbf{u}}-\mathbf{u}^n}{\tau} - \nu \Delta \widetilde{\mathbf{u}} + \nabla p^n + \mathbf{u}^n \cdot \nabla \widetilde{\mathbf{u}} = \mathbf{f}(t_{n+1}), \\ 
     & \widetilde{\mathbf{u}}|_{\partial \Omega} = 0,
 \end{aligned}
+\right.
 \end{equation}
 $$
 $$
 \begin{equation}
+\left\lbrace
 \begin{aligned}
     & \frac{\mathbf{u}^{n+1} - \widetilde{\mathbf{u}}}{\tau} + \nabla(p^{n+1} - p^n) = 0, \\ 
     & \nabla \cdot \mathbf{u}^{n+1} = 0, \\ 
     & \mathbf{u}^{n+1} \cdot \mathbf{n} = 0.
 \end{aligned}
+\right.
 \end{equation}
 $$
 
-求解:
+求解过程:
+
+1. 预估速度
 
 $$
 \begin{equation}
@@ -80,22 +88,44 @@ $$
 \end{aligned}
 \end{equation}
 $$
+
+2. 求解压力Poisson方程
+
+<font color = #ff0000> 强形式: </font>
 $$
 \begin{equation}
+\left\lbrace
 \begin{aligned}
     & - \Delta p^{n+1} = -\Delta p^n - \frac{\nabla \cdot \widetilde{\mathbf{u}}}{\tau}, \\ 
     & \nabla p^{n+1} \cdot \mathbf{n} = 0.
 \end{aligned}
+\right.
 \end{equation}
 $$
 
-这里由于压方程是退化的,需要追加拉格朗日乘子来强制施加约束, 考虑弱形式
-
+<font color = #ff0000> 弱形式: </font>
 $$
 \begin{equation}
+\left\lbrace
 \begin{aligned}
     & (\nabla p^{n+1}, \nabla q) + \alpha^{n+1} (1, q) = （\nabla p^n, \nabla q) + \frac{1}{\tau} (\widetilde{\mathbf{u}}, \nabla q) \\ 
-    & (p^{n+1}, 1) \beta = (p^0, 1)\beta
+    & (p^{n+1}, 1) \beta = 0
 \end{aligned}
+\right.
 \end{equation}
 $$
+
+3. 求解投影速度
+
+<font color = #ff0000> 强形式: </font>
+$$
+    \mathbf{u}^{n+1} = \mathbf{\widetilde{u}} - \tau\nabla (p^{n+1} - p^n)
+$$
+
+
+<font color = #ff0000> 弱形式: </font>
+$$
+    (\mathbf{u}^{n+1}, \mathbf{v}) = (\widetilde{\mathbf{u}}, \mathbf{v}) - \tau (\nabla(p^{n+1} - p^n), \mathbf{v})
+$$
+
+#### 二阶压力校正格式
