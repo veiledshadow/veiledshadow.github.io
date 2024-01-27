@@ -221,6 +221,24 @@ process id  7 data shared hellow world
 ```python
 recvbuf  = comm.scatter(sendbuf, rank_of_root_process)
 ```
+
+下面程序是使用 `scatter` 函数的示例:
+
+```python
+from mpi4py import MPI 
+
+comm = MPI.COMM_WORLD
+rank = comm.rank
+
+if rank == 0: 
+    array_to_share = [1, 2, 3, 4, 5, 6, 7, 8]
+else: 
+    array_to_share = None 
+recvbuf = comm.scatter(array_to_share, root=0)
+print("process id % d" % rank + " recvbuf = % d " % recvbuf)
+```
+
+
 得到以下输出结果:
 
 ```
@@ -237,9 +255,186 @@ process id  5 recvbuf =  6
 
 ### 使用 gather 函数进行通讯
 
-`gather` 函数是反向的 `scatter` 函数, 即收集所有进程发送向root进程的数据. `mpi4py` 实现的 `gather` 函数如下:
-
-
-
 ![](gather.png) 
 
+`gather` 函数是反向的 `scatter` 函数, 即收集所有进程发送向root进程的数据. `mpi4py` 实现的 `gather` 函数如下:
+
+```python
+recvbuf = comm.gather(sendbuf, rank_of_root_process)
+```
+
+`sendbuf` 表示要发送的数据, `rank_of_root_process` 表示要接收数据的进程
+
+接下来的例子中实现上图表示的过程. 每一个进程都构建自己的数据, 发送给root进程(rank为0).
+
+
+```python
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+data = (rank + 1) ** 2
+data = comm.gather(data, root=0)
+
+if rank == 0:
+    print ("rank = %s " %rank + "...receiving data from other process")
+    print(data)
+    for i in range(1, size):
+        data[i] = (i+1)**2
+    print(data)
+```
+
+输出结果如下:
+
+```
+rank = 0 ...receiving data from other process
+[1, 4, 9, 16]
+[1, 4, 9, 16]
+```
+
+# 对 NumPy 数组使用 MPI
+
+## 点对点通信
+
+如果需要传递和接收一个`NumPy`数组,需要把之前的`send`函数替换为`Send`,将`recv`函数替换为`Recv`.
+
+```python
+from mpi4py import MPI
+import numpy as np 
+
+comm = MPI.COMM_WORLD
+
+size = comm.size
+rank = comm.rank
+
+if rank == 0: 
+    data = np.arange(10, dtype = np.float64)
+    comm.Send(data, dest = 1, tag = 13)
+
+elif rank == 1: 
+    data = np.empty(10, dtype = np.float64)
+    print("rank of current process is % d" % rank)
+    print("data before recv", data)
+    recv = comm.Recv(data, source = 0, tag = 13)
+    print("data after recv", data)
+```
+
+## 集体通信
+
+### Bcast 函数
+
+<font color = #ff0000> 这里需要注意的是,当使用 MPI 传递 NumPy 数组的时候,必须指定 NumPy 数组的数据类型. </font>
+
+```python
+from mpi4py import MPI
+import numpy as np 
+
+comm = MPI.COMM_WORLD
+rank = comm.rank 
+
+if rank == 0: 
+    data = np.arange(100, dtype = np.float64)
+else:
+    data = np.empty(100, dtype = np.float64)
+
+comm.Bcast(data, root = 0)
+
+print("rank of current process is % d" % rank + "\n" + "data is", data, "\n")
+```
+
+使用两个进程运行该程序得到如下结果:
+
+```
+rank of current process is  0
+data isrank of current process is  1
+data is [ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9. 10. 11. 12. 13. 14. 15. 16. 17.
+ 18. 19. 20. 21. 22. 23. 24. 25. 26. 27. 28. 29. 30. 31. 32. 33. 34. 35.
+ 36. 37. 38. 39. 40. 41. 42. 43. 44. 45. 46. 47. 48. 49. 50. 51. 52. 53.
+ 54. 55. 56. 57. 58. 59. 60. 61. 62. 63. 64. 65. 66. 67. 68. 69. 70. 71.
+ 72. 73. 74. 75. 76. 77. 78. 79. 80. 81. 82. 83. 84. 85. 86. 87. 88. 89.
+ 90. 91. 92. 93. 94. 95. 96. 97. 98. 99.]
+
+ [ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9. 10. 11. 12. 13. 14. 15. 16. 17.
+ 18. 19. 20. 21. 22. 23. 24. 25. 26. 27. 28. 29. 30. 31. 32. 33. 34. 35.
+ 36. 37. 38. 39. 40. 41. 42. 43. 44. 45. 46. 47. 48. 49. 50. 51. 52. 53.
+ 54. 55. 56. 57. 58. 59. 60. 61. 62. 63. 64. 65. 66. 67. 68. 69. 70. 71.
+ 72. 73. 74. 75. 76. 77. 78. 79. 80. 81. 82. 83. 84. 85. 86. 87. 88. 89.
+ 90. 91. 92. 93. 94. 95. 96. 97. 98. 99.]
+```
+
+
+### Scatter 函数
+
+用 Scatter 函数传递 NumPy 数组时, 会将 NumPy 数组按照行传递到每一个处理器上, 其余操作同正常的 scatter函数, 如下所示:
+
+```python
+from mpi4py import MPI 
+import numpy as np 
+
+comm = MPI.COMM_WORLD 
+size = comm.size
+rank = comm.rank 
+
+if rank == 0:
+    sendbuf = np.arange(size * 10, dtype = np.float64).reshape(size, 10)
+else:
+    sendbuf = None
+
+recvbuf = np.empty(10, dtype = np.float64)
+comm.Scatter(sendbuf, recvbuf, root = 0)
+
+print("rank of current process is : % d" % rank + " data is : ", recvbuf)
+```
+
+使用 4 进程运行以上程序得到如下结果:
+
+```
+rank of current process is :  0 data is :  [0. 1. 2. 3. 4. 5. 6. 7. 8. 9.]
+rank of current process is :  1 data is :  [10. 11. 12. 13. 14. 15. 16. 17. 18. 19.]
+rank of current process is :  2 data is :  [20. 21. 22. 23. 24. 25. 26. 27. 28. 29.]
+rank of current process is :  3 data is :  [30. 31. 32. 33. 34. 35. 36. 37. 38. 39.]
+```
+
+### Gather 函数
+
+```python 
+from mpi4py import MPI
+import numpy as np
+
+comm = MPI.COMM_WORLD
+size = comm.size
+rank = comm.rank
+
+colsize = 10
+sendbuf = np.arange(colsize, dtype=np.float64) + 10 * rank
+
+recvbuf = None
+if rank == 0:
+    recvbuf = np.empty((size, colsize), dtype=np.float64)
+
+comm.Gather(sendbuf, recvbuf, root=0)
+
+print("rank of current process is % d" % rank + "\n recvbuf is : \n", recvbuf)
+```
+使用 4 进程运行以上程序得到以下结果:
+
+```
+rank of current process is  0
+ recvbuf is :
+rank of current process is  1
+ recvbuf is :
+ None
+rank of current process is  2
+ recvbuf is :
+ None
+rank of current process is  3
+ recvbuf is :
+ None
+ [[ 0.  1.  2.  3.  4.  5.  6.  7.  8.  9.]
+ [10. 11. 12. 13. 14. 15. 16. 17. 18. 19.]
+ [20. 21. 22. 23. 24. 25. 26. 27. 28. 29.]
+ [30. 31. 32. 33. 34. 35. 36. 37. 38. 39.]]
+```
