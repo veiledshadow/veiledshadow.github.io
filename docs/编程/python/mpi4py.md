@@ -41,7 +41,7 @@ hellow world parallel, rank =  1
 - `Comm.Recv(process_source)` 从源进程接收数据.
 
 点对点通讯点代码示例: 创建 `python` 文件 `point_to_point.py`
-```
+```python
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD
@@ -437,4 +437,55 @@ rank of current process is  3
  [10. 11. 12. 13. 14. 15. 16. 17. 18. 19.]
  [20. 21. 22. 23. 24. 25. 26. 27. 28. 29.]
  [30. 31. 32. 33. 34. 35. 36. 37. 38. 39.]]
+```
+
+- 练习: 输入一个 1D NumPy 数组, 使用并行的方式将数组里的每个元素进行平方.
+
+```python 
+from mpi4py import MPI
+import numpy as np 
+
+# 利用并行的方式将 arr 中的所有元素进行平方
+def parallel_ele_square(arr):
+    # 先将元素进行分组, 对于 i % size == r, 则将 arr[i] 分配到第 r 个处理器上.
+    comm = MPI.COMM_WORLD
+    rank = comm.rank 
+    size = comm.size
+    if rank == 0:
+        data_to_share = []
+        # 这里先只考虑 数组长度充分长的情况, 不考虑如果数组长度 < size 怎么, 需要再改进.
+        for i in range(size):
+            data_to_share.append(arr[i::size])
+    else:
+        data_to_share = None
+    # 利用 scatter 函数将数据发配到每个处理器上
+    recvbuf = comm.scatter(data_to_share, root = 0)
+    print("process id is % d; " % rank + " data is ", recvbuf)
+    square_data = recvbuf ** 2
+    square_data = comm.gather(square_data, root = 0)
+    if rank == 0: 
+        res = np.empty(arr.shape)
+        print("receiving data : ", square_data, "from other process ...")
+        # 将数据在 process 0 上合并
+        for i in range(size):
+            res[i::size] = square_data[i]
+        return res
+    else: 
+        res = None
+if __name__ == "__main__":
+    a = parallel_ele_square(np.arange(20))
+    print(a)
+```
+
+使用三个处理器运行该程序,得到如下结果：
+
+```
+process id is  0;  data is  [ 0  3  6  9 12 15 18]
+process id is  1;  data is  [ 1  4  7 10 13 16 19]
+None
+process id is  2;  data is  [ 2  5  8 11 14 17]
+None
+receiving data :  [array([  0,   9,  36,  81, 144, 225, 324]), array([  1,  16,  49, 100, 169, 256, 361]), array([  4,  25,  64, 121, 196, 289])] from other process ...
+[  0.   1.   4.   9.  16.  25.  36.  49.  64.  81. 100. 121. 144. 169.
+ 196. 225. 256. 289. 324. 361.]
 ```

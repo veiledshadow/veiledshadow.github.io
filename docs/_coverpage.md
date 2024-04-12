@@ -1,6 +1,6 @@
 <!-- _coverpage.md -->
 
-![logo](logo.jpg)
+![logo](cat.jpg)
 <!-- 背景图片 -->
 
 # <font color = #fffff> veiledshadow 的博客园 </font>
@@ -18,4 +18,5 @@
 
 <!-- 背景色 -->
 
-![color](#110033)
+<!-- ![color](#110033) -->
+![color](#000000)
