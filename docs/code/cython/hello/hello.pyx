@@ -1,3 +1,3 @@
 def hellow():
-    print("Hellow Cython!")
+    print("Hellow Cython! Niu bi!!!")
 
